@@ -44,6 +44,15 @@ impl SearchableGrid {
 }
 
 impl GridCell {
+    //                       -
+    //                       ^
+    //               (screen_height/2)
+    //                       |
+    // | <- (screen_width/2)-0-(screen_width/2) -> |
+    //                       |
+    //               (screen_height/2)
+    //                       v
+    //                       -
     pub fn get_render_position(
         &self,
         screen_width: f32,
@@ -59,6 +68,22 @@ impl GridCell {
             height_per_column * self.col as f32 - (screen_height / 2.),
         )
     }
+}
+
+// 0,h-------w,h
+// |          |
+// |          |
+// |          |
+// |          |
+// 0,0--------w,0
+pub fn screen_coord_to_row_col(
+    x: f32,
+    y: f32,
+    rows: i32,
+    cols: i32,
+    screen_width: i32,
+    screen_height: i32,
+) {
 }
 
 //                       -
