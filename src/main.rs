@@ -3,6 +3,8 @@ mod grid;
 
 const WINDOW_WIDTH: i32 = 800;
 const WINDOW_HEIGHT: i32 = 800;
+const NUM_ROWS: i32 = 50;
+const NUM_COLS: i32 = 50;
 
 fn main() {
     let mut grid = grid::SearchableGrid::new(50, 50);
@@ -54,8 +56,7 @@ fn redraw_grid_on_change(
 
         for row in grid.grid.iter() {
             for col in row.iter() {
-                let (x, y) =
-                    col.get_render_position(WINDOW_WIDTH as f32, WINDOW_HEIGHT as f32, 50, 50);
+                let (x, y) = col.get_render_position(WINDOW_WIDTH as f32, WINDOW_HEIGHT as f32);
 
                 let mut color = Color::WHITE;
 
@@ -95,6 +96,20 @@ fn mouse_button_input(
         if let Some(_position) = window.cursor_position() {
             // cursor is inside the window, position given
             println!("({},{})", _position.x, _position.y);
+            let (row, col) = grid::screen_coord_to_row_col(
+                _position.x as i32,
+                _position.y as i32,
+                NUM_ROWS,
+                NUM_COLS,
+                WINDOW_WIDTH,
+                WINDOW_HEIGHT,
+            );
+            let mut grid_cell = grid.grid[row as usize][col as usize];
+            grid_cell.typ = grid::GridCellType::Wall;
+
+            println!("{:?}", grid.grid[row as usize][col as usize]);
+
+            grid.grid[row as usize][col as usize] = grid_cell;
         }
     }
 }

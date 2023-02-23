@@ -13,6 +13,8 @@ pub struct GridCell {
     pub typ: GridCellType,
     pub row: i32,
     pub col: i32,
+    pub rows: i32,
+    pub cols: i32,
 }
 
 #[derive(Debug, Clone, Copy, Resource, Reflect, Eq, PartialEq)]
@@ -35,6 +37,8 @@ impl SearchableGrid {
                     typ: GridCellType::Empty,
                     row: i,
                     col: j,
+                    rows,
+                    cols,
                 });
             }
         }
@@ -53,15 +57,9 @@ impl GridCell {
     //               (screen_height/2)
     //                       v
     //                       -
-    pub fn get_render_position(
-        &self,
-        screen_width: f32,
-        screen_height: f32,
-        rows: i32,
-        cols: i32,
-    ) -> (f32, f32) {
-        let width_per_row = screen_width / rows as f32;
-        let height_per_column = screen_height / cols as f32;
+    pub fn get_render_position(&self, screen_width: f32, screen_height: f32) -> (f32, f32) {
+        let width_per_row = screen_width / self.rows as f32;
+        let height_per_column = screen_height / self.cols as f32;
 
         (
             width_per_row * self.row as f32 - (screen_width / 2.),
@@ -77,13 +75,20 @@ impl GridCell {
 // |          |
 // 0,0--------w,0
 pub fn screen_coord_to_row_col(
-    x: f32,
-    y: f32,
-    rows: i32,
-    cols: i32,
+    x: i32,
+    y: i32,
+    num_rows: i32,
+    num_cols: i32,
     screen_width: i32,
     screen_height: i32,
-) {
+) -> (i32, i32) {
+    let pixels_per_row = screen_width / num_rows;
+    let pixels_per_column = screen_height / num_cols;
+
+    let row = x / pixels_per_row;
+    let col = y / pixels_per_column;
+
+    (row, col)
 }
 
 //                       -
