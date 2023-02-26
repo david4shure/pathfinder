@@ -7,7 +7,7 @@ const NUM_ROWS: i32 = 50;
 const NUM_COLS: i32 = 50;
 
 fn main() {
-    let mut grid = grid::SearchableGrid::new(50, 50);
+    let mut grid = grid::SearchableGrid::new(NUM_ROWS, NUM_COLS);
 
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
@@ -26,13 +26,7 @@ fn main() {
         .run();
 }
 
-fn setup(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
-    mut windows: ResMut<Windows>,
-    mut grid: ResMut<grid::SearchableGrid>,
-) {
+fn setup(mut commands: Commands, mut windows: ResMut<Windows>) {
     let window = windows.primary_mut();
 
     println!("{} x {}", window.width(), window.height());
@@ -41,7 +35,7 @@ fn setup(
 }
 
 fn redraw_grid_on_change(
-    mut grid: ResMut<grid::SearchableGrid>,
+    grid: ResMut<grid::SearchableGrid>,
     mut mesh_query: Query<Entity, With<grid::GridCellLabel>>,
     mut commands: Commands,
     mut materials: ResMut<Assets<ColorMaterial>>,
@@ -54,30 +48,28 @@ fn redraw_grid_on_change(
             commands.entity(entity).despawn_recursive();
         }
 
-        for row in grid.grid.iter() {
-            for col in row.iter() {
-                let (x, y) = col.get_render_position(WINDOW_WIDTH as f32, WINDOW_HEIGHT as f32);
+        for tile in grid.grid.iter() {
+            let (x, y) = tile.get_render_position(WINDOW_WIDTH as f32, WINDOW_HEIGHT as f32);
 
-                let mut color = Color::WHITE;
+            let mut color = Color::WHITE;
 
-                println!("{:?}", color);
+            println!("{:?}", color);
 
-                if col.typ == grid::GridCellType::Wall {
-                    color = Color::BLACK;
-                }
-
-                commands.spawn((
-                    MaterialMesh2dBundle {
-                        mesh: meshes.add(Mesh::from(shape::Quad::default())).into(),
-                        transform: Transform::default()
-                            .with_scale(Vec3::splat(12.))
-                            .with_translation(Vec3::new(x, y, 0.)),
-                        material: materials.add(ColorMaterial::from(color)),
-                        ..default()
-                    },
-                    grid::GridCellLabel,
-                ));
+            if tile.typ == grid::GridCellType::Wall {
+                color = Color::BLACK;
             }
+
+            commands.spawn((
+                MaterialMesh2dBundle {
+                    mesh: meshes.add(Mesh::from(shape::Quad::default())).into(),
+                    transform: Transform::default()
+                        .with_scale(Vec3::splat(12.))
+                        .with_translation(Vec3::new(x, y, 0.)),
+                    material: materials.add(ColorMaterial::from(color)),
+                    ..default()
+                },
+                grid::GridCellLabel,
+            ));
         }
     }
 }
@@ -104,12 +96,15 @@ fn mouse_button_input(
                 WINDOW_WIDTH,
                 WINDOW_HEIGHT,
             );
-            let mut grid_cell = grid.grid[row as usize][col as usize];
+
+            if row > NUM_ROWS || col > NUM_COLS || row < 0 || col < 0 {
+                return;
+            }
+
+            let mut grid_cell = grid.get(row, col);
             grid_cell.typ = grid::GridCellType::Wall;
 
-            println!("{:?}", grid.grid[row as usize][col as usize]);
-
-            grid.grid[row as usize][col as usize] = grid_cell;
+            grid.set(row, col, grid_cell);
         }
     }
 }

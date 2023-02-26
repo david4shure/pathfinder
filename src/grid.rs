@@ -2,7 +2,9 @@ use bevy::prelude::*;
 
 #[derive(Debug, Resource)]
 pub struct SearchableGrid {
-    pub grid: Vec<Vec<GridCell>>,
+    pub grid: Vec<GridCell>,
+    pub rows: i32,
+    pub cols: i32,
 }
 
 #[derive(Resource, Component)]
@@ -26,24 +28,29 @@ pub enum GridCellType {
 impl SearchableGrid {
     pub fn new(rows: i32, cols: i32) -> SearchableGrid {
         // Initialize
-        let mut grid: Vec<Vec<GridCell>> = Vec::new();
 
-        for i in 0..rows {
-            let slab: Vec<GridCell> = Vec::new();
-            grid.push(slab);
+        let total_flat_size = rows * cols;
 
-            for j in 0..cols {
-                grid[i as usize].push(GridCell {
-                    typ: GridCellType::Empty,
-                    row: i,
-                    col: j,
-                    rows,
-                    cols,
-                });
-            }
+        let mut grid: Vec<GridCell> = Vec::with_capacity(total_flat_size as usize);
+
+        for i in 0..total_flat_size {
+            grid.push(GridCell {
+                typ: GridCellType::Empty,
+                row: i / rows,
+                col: i % cols,
+                rows,
+                cols,
+            });
         }
+        SearchableGrid { grid, rows, cols }
+    }
 
-        SearchableGrid { grid }
+    pub fn get(&self, row: i32, col: i32) -> GridCell {
+        self.grid[(row * self.rows + col) as usize]
+    }
+
+    pub fn set(&mut self, row: i32, col: i32, grid_cell: GridCell) {
+        self.grid[(row * self.rows + col) as usize] = grid_cell
     }
 }
 
