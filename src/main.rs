@@ -1,18 +1,18 @@
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
+use std::time::{Duration, Instant};
+
 mod grid;
 
 const WINDOW_WIDTH: i32 = 800;
 const WINDOW_HEIGHT: i32 = 800;
-const NUM_ROWS: i32 = 50;
-const NUM_COLS: i32 = 50;
 
 fn main() {
-    let mut grid = grid::SearchableGrid::new(NUM_ROWS, NUM_COLS);
+    let mut grid = grid::SearchableGrid::new(grid::NUM_ROWS, grid::NUM_COLS);
 
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             window: WindowDescriptor {
-                title: "I am a window!".to_string(),
+                title: "Pathfinder".to_string(),
                 width: WINDOW_WIDTH as f32,
                 height: WINDOW_HEIGHT as f32,
                 ..default()
@@ -22,6 +22,7 @@ fn main() {
         .insert_resource(grid)
         .add_system(redraw_grid_on_change)
         .add_system(mouse_button_input)
+        .add_system(keyboard_input)
         .add_startup_system(setup)
         .run();
 }
@@ -29,48 +30,75 @@ fn main() {
 fn setup(mut commands: Commands, mut windows: ResMut<Windows>) {
     let window = windows.primary_mut();
 
-    println!("{} x {}", window.width(), window.height());
-
     commands.spawn(Camera2dBundle::default());
 }
 
 fn redraw_grid_on_change(
-    grid: ResMut<grid::SearchableGrid>,
+    mut grid: Res<grid::SearchableGrid>,
     mut mesh_query: Query<Entity, With<grid::GridCellLabel>>,
     mut commands: Commands,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
     if grid.is_changed() {
-        println!("Grid changed!");
-
         for entity in &mut mesh_query {
             commands.entity(entity).despawn_recursive();
         }
 
-        for tile in grid.grid.iter() {
-            let (x, y) = tile.get_render_position(WINDOW_WIDTH as f32, WINDOW_HEIGHT as f32);
+        let start = Instant::now();
+        let path = grid.astar_shortest_path(grid.get(0,0), grid.get(grid::NUM_ROWS-1,grid::NUM_COLS-1), grid::SearchableGrid::euclidean_distance);
+        let duration = start.elapsed();
 
-            let mut color = Color::WHITE;
+        println!("Duration of A* pathfinding = {:?}", duration);
+    
+        for row in 0..grid::NUM_ROWS {
+            for col in 0..grid::NUM_COLS {
+                let grid_cell = grid.get(row,col);
 
-            println!("{:?}", color);
+                let mut color = grid_cell.get_color();
 
-            if tile.typ == grid::GridCellType::Wall {
-                color = Color::BLACK;
+                if path.contains(&grid_cell) {
+                    color = Color::BLUE;
+                }
+
+                let (x, y) = grid_cell.get_render_position(WINDOW_WIDTH as f32, WINDOW_HEIGHT as f32);
+
+                commands.spawn((
+                    MaterialMesh2dBundle {
+                        mesh: meshes.add(Mesh::from(shape::Quad::default())).into(),
+                        transform: Transform::default()
+                            .with_scale(Vec3::splat((WINDOW_WIDTH as f32/grid::NUM_ROWS as f32) * 0.9))
+                            .with_translation(Vec3::new(x, y, 0.)),
+                        material: materials.add(ColorMaterial::from(color)),
+                        ..default()
+                    },
+                    grid::GridCellLabel,
+                ));
             }
+        }
+
+        for grid in path {
+            let (x, y) = grid.get_render_position(WINDOW_WIDTH as f32, WINDOW_HEIGHT as f32);
 
             commands.spawn((
                 MaterialMesh2dBundle {
                     mesh: meshes.add(Mesh::from(shape::Quad::default())).into(),
                     transform: Transform::default()
-                        .with_scale(Vec3::splat(12.))
+                        .with_scale(Vec3::splat((WINDOW_WIDTH as f32/grid::NUM_ROWS as f32) * 0.9))
                         .with_translation(Vec3::new(x, y, 0.)),
-                    material: materials.add(ColorMaterial::from(color)),
+                    material: materials.add(ColorMaterial::from(Color::BLUE)),
                     ..default()
                 },
                 grid::GridCellLabel,
             ));
         }
+    }
+}
+
+fn keyboard_input(keys: Res<Input<KeyCode>>, mut grid: ResMut<grid::SearchableGrid>) {
+    if keys.pressed(KeyCode::R) {
+        grid.reset_grid();
+        grid = grid;
     }
 }
 
@@ -87,17 +115,16 @@ fn mouse_button_input(
         // Left button was pressed
         if let Some(_position) = window.cursor_position() {
             // cursor is inside the window, position given
-            println!("({},{})", _position.x, _position.y);
             let (row, col) = grid::screen_coord_to_row_col(
                 _position.x as i32,
                 _position.y as i32,
-                NUM_ROWS,
-                NUM_COLS,
+                grid::NUM_ROWS,
+                grid::NUM_COLS,
                 WINDOW_WIDTH,
                 WINDOW_HEIGHT,
             );
 
-            if row > NUM_ROWS || col > NUM_COLS || row < 0 || col < 0 {
+            if row > grid::NUM_ROWS-1 || col > grid::NUM_COLS-1 || row < 0 || col < 0 {
                 return;
             }
 
