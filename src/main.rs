@@ -1,5 +1,5 @@
 use bevy::{prelude::*, sprite::MaterialMesh2dBundle};
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 mod grid;
 
@@ -7,7 +7,7 @@ const WINDOW_WIDTH: i32 = 800;
 const WINDOW_HEIGHT: i32 = 800;
 
 fn main() {
-    let mut grid = grid::SearchableGrid::new(grid::NUM_ROWS, grid::NUM_COLS);
+    let grid = grid::SearchableGrid::new(grid::NUM_ROWS, grid::NUM_COLS);
 
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
@@ -22,7 +22,7 @@ fn main() {
         .insert_resource(grid)
         .add_system(redraw_grid_on_change)
         .add_system(mouse_button_input)
-        .add_system(keyboard_input)
+        .add_system(keyboard_input.after(redraw_grid_on_change))
         .add_startup_system(setup)
         .run();
 }
@@ -34,7 +34,7 @@ fn setup(mut commands: Commands, mut windows: ResMut<Windows>) {
 }
 
 fn redraw_grid_on_change(
-    mut grid: Res<grid::SearchableGrid>,
+    mut grid: ResMut<grid::SearchableGrid>,
     mut mesh_query: Query<Entity, With<grid::GridCellLabel>>,
     mut commands: Commands,
     mut materials: ResMut<Assets<ColorMaterial>>,
@@ -45,11 +45,9 @@ fn redraw_grid_on_change(
             commands.entity(entity).despawn_recursive();
         }
 
-        let start = Instant::now();
-        let path = grid.astar_shortest_path(grid.get(0,0), grid.get(grid::NUM_ROWS-1,grid::NUM_COLS-1), grid::SearchableGrid::euclidean_distance);
-        let duration = start.elapsed();
-
-        println!("Duration of A* pathfinding = {:?}", duration);
+        let start = grid.get(0,0);
+        let end = grid.get(grid::NUM_ROWS-1,grid::NUM_COLS-1);
+        let path = grid.astar_shortest_path(start, end, grid::SearchableGrid::euclidean_distance);
     
         for row in 0..grid::NUM_ROWS {
             for col in 0..grid::NUM_COLS {
@@ -98,7 +96,6 @@ fn redraw_grid_on_change(
 fn keyboard_input(keys: Res<Input<KeyCode>>, mut grid: ResMut<grid::SearchableGrid>) {
     if keys.pressed(KeyCode::R) {
         grid.reset_grid();
-        grid = grid;
     }
 }
 
