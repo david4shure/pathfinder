@@ -113,12 +113,10 @@ fn mouse_button_input(
         if let Some(_position) = window.cursor_position() {
             // cursor is inside the window, position given
             let (row, col) = grid::screen_coord_to_row_col(
-                _position.x as i32,
-                _position.y as i32,
-                grid::NUM_ROWS,
-                grid::NUM_COLS,
-                WINDOW_WIDTH,
-                WINDOW_HEIGHT,
+                _position.x,
+                _position.y,
+                WINDOW_WIDTH as f32,
+                WINDOW_HEIGHT as f32,
             );
 
             if row > grid::NUM_ROWS-1 || col > grid::NUM_COLS-1 || row < 0 || col < 0 {

@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 use std::collections::HashMap;
 
-pub const NUM_ROWS: i32 = 40;
-pub const NUM_COLS: i32 = 40;
+pub const NUM_ROWS: i32 = 30;
+pub const NUM_COLS: i32 = 30;
 
 #[derive(Debug, Resource, Clone, Copy)]
 pub struct SearchableGrid {
@@ -231,20 +231,18 @@ impl GridCell {
 // |          |
 // 0,0--------w,0
 pub fn screen_coord_to_row_col(
-    x: i32,
-    y: i32,
-    num_rows: i32,
-    num_cols: i32,
-    screen_width: i32,
-    screen_height: i32,
+    x: f32,
+    y: f32,
+    screen_width: f32,
+    screen_height: f32,
 ) -> (i32, i32) {
-    let pixels_per_row = screen_width / num_rows;
-    let pixels_per_column = screen_height / num_cols;
+    let pixels_per_row = screen_width / NUM_ROWS as f32;
+    let pixels_per_column = screen_height / NUM_COLS as f32;
 
     let row = x / pixels_per_row;
     let col = y / pixels_per_column;
 
-    (row, col)
+    (row as i32, col as i32)
 }
 
 //                       -
