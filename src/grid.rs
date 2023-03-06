@@ -5,6 +5,8 @@ use std::collections::HashSet;
 pub const NUM_ROWS: i32 = 30;
 pub const NUM_COLS: i32 = 30;
 
+type HeuristicFunc = fn ((i32,i32),(i32,i32)) -> f32;
+
 #[derive(Debug, Resource)]
 pub struct SearchableGrid {
     pub grid: Vec<Vec<GridCellType>>,
@@ -78,7 +80,7 @@ impl SearchableGrid {
         total_path
     }
 
-    pub fn astar_shortest_path(&mut self, start: (i32, i32), goal: (i32, i32), h: fn((i32,i32),(i32,i32)) -> f32) -> Vec<(i32,i32)> {
+    pub fn astar_shortest_path(&mut self, start: (i32, i32), goal: (i32, i32), h: HeuristicFunc) -> Vec<(i32,i32)> {
         // Initialize open set
         let mut open_set = Vec::<(i32,i32)>::new();
 
