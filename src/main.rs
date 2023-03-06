@@ -27,9 +27,7 @@ fn main() {
         .run();
 }
 
-fn setup(mut commands: Commands, mut windows: ResMut<Windows>) {
-    let window = windows.primary_mut();
-
+fn setup(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
 }
 
@@ -45,21 +43,23 @@ fn redraw_grid_on_change(
             commands.entity(entity).despawn_recursive();
         }
 
-        let start = grid.get(0,0);
-        let end = grid.get(grid::NUM_ROWS-1,grid::NUM_COLS-1);
-        let path = grid.astar_shortest_path(start, end, grid::SearchableGrid::euclidean_distance);
+        let start = Instant::now();
+        let path = grid.astar_shortest_path((0,0), (grid::NUM_ROWS-1,grid::NUM_COLS-1), grid::SearchableGrid::euclidean_distance);
+        let duration = start.elapsed();
     
+        println!("Pathfinding duration is {:?}", duration);
+        
         for row in 0..grid::NUM_ROWS {
             for col in 0..grid::NUM_COLS {
                 let grid_cell = grid.get(row,col);
 
-                let mut color = grid_cell.get_color();
+                let mut color = grid::get_color(grid_cell);
 
-                if path.contains(&grid_cell) {
+                if path.contains(&(row,col)) {
                     color = Color::BLUE;
                 }
 
-                let (x, y) = grid_cell.get_render_position(WINDOW_WIDTH as f32, WINDOW_HEIGHT as f32);
+                let (x, y) = grid::get_render_position(WINDOW_WIDTH as f32, WINDOW_HEIGHT as f32,row,col);
 
                 commands.spawn((
                     MaterialMesh2dBundle {
@@ -76,7 +76,7 @@ fn redraw_grid_on_change(
         }
 
         for grid in path {
-            let (x, y) = grid.get_render_position(WINDOW_WIDTH as f32, WINDOW_HEIGHT as f32);
+            let (x, y) = grid::get_render_position(WINDOW_WIDTH as f32, WINDOW_HEIGHT as f32, grid.0,grid.1);
 
             commands.spawn((
                 MaterialMesh2dBundle {
@@ -106,27 +106,45 @@ fn mouse_button_input(
 ) {
     // Games typically only have one window (the primary window).
     // For multi-window applications, you need to use a specific window ID here.
-    let window = windows.get_primary().unwrap();
+    let _window = windows.get_primary().unwrap();
+
+    let mut position_x = -1.0;
+    let mut position_y = -1.0;
+
+    if let Some(_position) = _window.cursor_position() {
+        // cursor is inside the window, position given
+        position_x = _position.x;
+        position_y = _position.y;
+    }
 
     if buttons.pressed(MouseButton::Left) {
         // Left button was pressed
-        if let Some(_position) = window.cursor_position() {
-            // cursor is inside the window, position given
-            let (row, col) = grid::screen_coord_to_row_col(
-                _position.x,
-                _position.y,
-                WINDOW_WIDTH as f32,
-                WINDOW_HEIGHT as f32,
-            );
+        let (row, col) = grid::screen_coord_to_row_col(
+            position_x,
+            position_y,
+            WINDOW_WIDTH as f32,
+            WINDOW_HEIGHT as f32,
+        );
 
-            if row > grid::NUM_ROWS-1 || col > grid::NUM_COLS-1 || row < 0 || col < 0 {
-                return;
-            }
-
-            let mut grid_cell = grid.get(row, col);
-            grid_cell.typ = grid::GridCellType::Wall;
-
-            grid.set(row, col, grid_cell);
+        if row > grid::NUM_ROWS-1 || col > grid::NUM_COLS-1 || row < 0 || col < 0 {
+            return;
         }
+
+        grid.set(row, col, grid::GridCellType::Wall);
+    }
+
+    if buttons.pressed(MouseButton::Right) {
+        let (row, col) = grid::screen_coord_to_row_col(
+            position_x,
+            position_y,
+            WINDOW_WIDTH as f32,
+            WINDOW_HEIGHT as f32,
+        );
+
+        if row > grid::NUM_ROWS-1 || col > grid::NUM_COLS-1 || row < 0 || col < 0 {
+            return;
+        }
+
+        grid.set(row, col, grid::GridCellType::Empty);
     }
 }
