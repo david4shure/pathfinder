@@ -45,7 +45,7 @@ fn main() {
         .insert_resource(grid)
         .insert_resource(start_point)
         .insert_resource(end_point)
-        .add_system(redraw_grid_on_change)
+        .add_system(compute_path_and_redraw)
         .add_system(mouse_button_input)
         .add_system(update_start_or_end_point)
         .add_system(reset_grid_to_default)
@@ -82,7 +82,7 @@ fn setup(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
 }
 
-fn redraw_grid_on_change(
+fn compute_path_and_redraw(
     mut grid: ResMut<grid::SearchableGrid>,
     mut mesh_query: Query<Entity, With<grid::GridCellLabel>>,
     mut commands: Commands,
@@ -166,7 +166,7 @@ fn reset_grid_to_default(
     mut start: ResMut<StartPosition>,
     mut end: ResMut<EndPosition>,
 ) {
-    if keys.pressed(KeyCode::R) {
+    if keys.pressed(KeyCode::Space) {
         start.row = 0;
         start.col = 0;
         end.row = grid::NUM_ROWS-1;

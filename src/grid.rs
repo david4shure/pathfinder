@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 use std::collections::{HashMap, HashSet, VecDeque};
 
-pub const NUM_ROWS: i32 = 50;
-pub const NUM_COLS: i32 = 50;
+pub const NUM_ROWS: i32 = 30;
+pub const NUM_COLS: i32 = 30;
 
 type HeuristicFunc = fn((i32, i32), (i32, i32)) -> f32;
 
@@ -58,10 +58,11 @@ pub enum GridCellType {
 }
 
 impl SearchableGrid {
+    #[allow(dead_code)]
     pub fn manhatten_distance(start: (i32, i32), end: (i32, i32)) -> f32 {
         (start.0 as f32 - end.0 as f32).abs() + (start.1 as f32 - end.1 as f32).abs()
     }
-    
+
     #[allow(dead_code)]
     pub fn euclidean_distance(start: (i32, i32), end: (i32, i32)) -> f32 {
         ((start.0 as f32 - end.0 as f32).powf(2.) + (start.1 as f32 - end.1 as f32).powf(2.)).sqrt()
