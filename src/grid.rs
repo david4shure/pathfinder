@@ -9,6 +9,8 @@ type HeuristicFunc = fn((i32, i32), (i32, i32)) -> f32;
 #[derive(Debug, Resource)]
 pub struct SearchableGrid {
     pub grid: Vec<Vec<GridCellType>>,
+    pub start: (i32,i32),
+    pub end: (i32,i32),
     pub rows: i32,
     pub cols: i32,
 }
@@ -41,7 +43,6 @@ pub fn get_neighbors(at: (i32, i32), searchable_grid: &mut SearchableGrid) -> Ve
             if grid_cell != GridCellType::Wall {
                 neighbors.push((new_row, new_col));
             }
-            continue;
         }
     }
 
@@ -60,7 +61,8 @@ impl SearchableGrid {
     pub fn manhatten_distance(start: (i32, i32), end: (i32, i32)) -> f32 {
         (start.0 as f32 - end.0 as f32).abs() + (start.1 as f32 - end.1 as f32).abs()
     }
-
+    
+    #[allow(dead_code)]
     pub fn euclidean_distance(start: (i32, i32), end: (i32, i32)) -> f32 {
         ((start.0 as f32 - end.0 as f32).powf(2.) + (start.1 as f32 - end.1 as f32).powf(2.)).sqrt()
     }
@@ -144,7 +146,7 @@ impl SearchableGrid {
         Vec::<(i32, i32)>::new()
     }
 
-    fn new_grid_vec() -> Vec<Vec<GridCellType>> {
+    fn new_grid_vec(start: (i32,i32), end: (i32,i32)) -> Vec<Vec<GridCellType>> {
         let mut grid = Vec::<Vec<GridCellType>>::new();
 
         for row in 0..NUM_ROWS {
@@ -153,9 +155,9 @@ impl SearchableGrid {
             grid.push(row_grid);
 
             for col in 0..NUM_COLS {
-                if row == NUM_ROWS - 1 && col == NUM_COLS - 1 {
+                if row == end.0 && col == end.1 {
                     grid[row as usize].push(GridCellType::End);
-                } else if row == 0 && col == 0 {
+                } else if row == start.0 && col == start.1 {
                     grid[row as usize].push(GridCellType::Start);
                 } else {
                     grid[row as usize].push(GridCellType::Empty);
@@ -166,49 +168,37 @@ impl SearchableGrid {
         grid
     }
 
-    pub fn new(rows: i32, cols: i32) -> SearchableGrid {
+    pub fn new(rows: i32, cols: i32, start: (i32,i32), end: (i32,i32)) -> SearchableGrid {
         SearchableGrid {
-            grid: SearchableGrid::new_grid_vec(),
+            grid: SearchableGrid::new_grid_vec(start,end),
+            start,
+            end,
             rows,
             cols,
         }
-    }
-
-    pub fn get(&mut self, row: i32, col: i32) -> GridCellType {
-        self.grid[row as usize][col as usize]
     }
 
     pub fn set(&mut self, row: i32, col: i32, grid_cell: GridCellType) {
         self.grid[row as usize][col as usize] = grid_cell;
     }
 
-    pub fn reset_grid(&mut self) {
-        self.grid = SearchableGrid::new_grid_vec();
+    pub fn reset_grid(&mut self, start:(i32,i32),end:(i32,i32)) {
+        self.start = start;
+        self.end = end;
+        self.grid = SearchableGrid::new_grid_vec(self.start,self.end);
     }
-}
 
-//                       -
-//                       ^
-//               (screen_height/2)
-//                       |
-// | <- (screen_width/2)-0-(screen_width/2) -> |
-//                       |
-//               (screen_height/2)
-//                       v
-//                       -
-pub fn get_render_position(
-    screen_width: f32,
-    screen_height: f32,
-    row: i32,
-    col: i32,
-) -> (f32, f32) {
-    let width_per_row = screen_width / NUM_ROWS as f32;
-    let height_per_column = screen_height / NUM_COLS as f32;
+    pub fn update_end_point(&mut self, end:(i32,i32)) {
+        self.grid[self.end.0 as usize][self.end.1 as usize] = GridCellType::Empty;
+        self.end = end;
+        self.grid[self.end.0 as usize][self.end.1 as usize] = GridCellType::End;
+    }
 
-    (
-        width_per_row * row as f32 - (screen_width / 2.) + 0.5 * width_per_row,
-        height_per_column * col as f32 - (screen_height / 2.) + 0.5 * height_per_column,
-    )
+    pub fn update_start_point(&mut self, start:(i32,i32)) {
+        self.grid[self.start.0 as usize][self.start.1 as usize] = GridCellType::Empty;
+        self.start = start;
+        self.grid[self.start.0 as usize][self.start.1 as usize] = GridCellType::Start;
+    }
 }
 
 pub fn get_color(grid_cell: GridCellType) -> Color {
@@ -227,25 +217,4 @@ pub fn get_color(grid_cell: GridCellType) -> Color {
     }
 
     color
-}
-
-// 0,h-------w,h
-// |          |
-// |          |
-// |          |
-// |          |
-// 0,0--------w,0
-pub fn screen_coord_to_row_col(
-    x: f32,
-    y: f32,
-    screen_width: f32,
-    screen_height: f32,
-) -> (i32, i32) {
-    let pixels_per_row = screen_width / NUM_ROWS as f32;
-    let pixels_per_column = screen_height / NUM_COLS as f32;
-
-    let row = x / pixels_per_row;
-    let col = y / pixels_per_column;
-
-    (row as i32, col as i32)
 }
