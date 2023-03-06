@@ -45,28 +45,35 @@ fn redraw_grid_on_change(
         }
 
         let start = Instant::now();
-        let path = grid.astar_shortest_path((0,0), (grid::NUM_ROWS-1,grid::NUM_COLS-1), grid::SearchableGrid::euclidean_distance);
+        let path = grid.astar_shortest_path(
+            (0, 0),
+            (grid::NUM_ROWS - 1, grid::NUM_COLS - 1),
+            grid::SearchableGrid::euclidean_distance,
+        );
         let duration = start.elapsed();
-    
+
         println!("Pathfinding duration is {:?}", duration);
-        
+
         for row in 0..grid::NUM_ROWS {
             for col in 0..grid::NUM_COLS {
-                let grid_cell = grid.get(row,col);
+                let grid_cell = grid.grid[row as usize][col as usize];
 
                 let mut color = grid::get_color(grid_cell);
 
-                if path.contains(&(row,col)) {
+                if path.contains(&(row, col)) {
                     color = Color::BLUE;
                 }
 
-                let (x, y) = grid::get_render_position(WINDOW_WIDTH as f32, WINDOW_HEIGHT as f32,row,col);
+                let (x, y) =
+                    grid::get_render_position(WINDOW_WIDTH as f32, WINDOW_HEIGHT as f32, row, col);
 
                 commands.spawn((
                     MaterialMesh2dBundle {
                         mesh: meshes.add(Mesh::from(shape::Quad::default())).into(),
                         transform: Transform::default()
-                            .with_scale(Vec3::splat((WINDOW_WIDTH as f32/grid::NUM_ROWS as f32) * 0.9))
+                            .with_scale(Vec3::splat(
+                                (WINDOW_WIDTH as f32 / grid::NUM_ROWS as f32) * 0.9,
+                            ))
                             .with_translation(Vec3::new(x, y, 0.)),
                         material: materials.add(ColorMaterial::from(color)),
                         ..default()
@@ -77,13 +84,20 @@ fn redraw_grid_on_change(
         }
 
         for grid in path {
-            let (x, y) = grid::get_render_position(WINDOW_WIDTH as f32, WINDOW_HEIGHT as f32, grid.0,grid.1);
+            let (x, y) = grid::get_render_position(
+                WINDOW_WIDTH as f32,
+                WINDOW_HEIGHT as f32,
+                grid.0,
+                grid.1,
+            );
 
             commands.spawn((
                 MaterialMesh2dBundle {
                     mesh: meshes.add(Mesh::from(shape::Quad::default())).into(),
                     transform: Transform::default()
-                        .with_scale(Vec3::splat((WINDOW_WIDTH as f32/grid::NUM_ROWS as f32) * 0.9))
+                        .with_scale(Vec3::splat(
+                            (WINDOW_WIDTH as f32 / grid::NUM_ROWS as f32) * 0.9,
+                        ))
                         .with_translation(Vec3::new(x, y, 0.)),
                     material: materials.add(ColorMaterial::from(Color::BLUE)),
                     ..default()
@@ -127,11 +141,15 @@ fn mouse_button_input(
             WINDOW_HEIGHT as f32,
         );
 
-        if row > grid::NUM_ROWS-1 || col > grid::NUM_COLS-1 || row < 0 || col < 0 {
+        if row > grid::NUM_ROWS - 1 || col > grid::NUM_COLS - 1 || row < 0 || col < 0 {
             return;
         }
 
-        grid.set(row, col, grid::GridCellType::Wall);
+        let original_type = grid.grid[row as usize][col as usize];
+
+        if original_type != grid::GridCellType::Wall {
+            grid.set(row, col, grid::GridCellType::Wall);
+        }
     }
 
     if buttons.pressed(MouseButton::Right) {
@@ -142,10 +160,14 @@ fn mouse_button_input(
             WINDOW_HEIGHT as f32,
         );
 
-        if row > grid::NUM_ROWS-1 || col > grid::NUM_COLS-1 || row < 0 || col < 0 {
+        if row > grid::NUM_ROWS - 1 || col > grid::NUM_COLS - 1 || row < 0 || col < 0 {
             return;
         }
 
-        grid.set(row, col, grid::GridCellType::Empty);
+        let original_type = grid.grid[row as usize][col as usize];
+
+        if original_type != grid::GridCellType::Empty {
+            grid.set(row, col, grid::GridCellType::Empty);
+        }
     }
 }

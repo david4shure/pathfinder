@@ -1,11 +1,10 @@
 use bevy::prelude::*;
-use std::collections::HashMap;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet, VecDeque};
 
-pub const NUM_ROWS: i32 = 30;
-pub const NUM_COLS: i32 = 30;
+pub const NUM_ROWS: i32 = 50;
+pub const NUM_COLS: i32 = 50;
 
-type HeuristicFunc = fn ((i32,i32),(i32,i32)) -> f32;
+type HeuristicFunc = fn((i32, i32), (i32, i32)) -> f32;
 
 #[derive(Debug, Resource)]
 pub struct SearchableGrid {
@@ -17,21 +16,30 @@ pub struct SearchableGrid {
 #[derive(Resource, Component)]
 pub struct GridCellLabel;
 
-pub fn get_neighbors(at: (i32,i32), searchable_grid: &mut SearchableGrid) -> Vec<(i32,i32)> {
-    let mut neighbors = Vec::<(i32,i32)>::new();
+pub fn get_neighbors(at: (i32, i32), searchable_grid: &mut SearchableGrid) -> Vec<(i32, i32)> {
+    let mut neighbors = Vec::<(i32, i32)>::new();
 
     // Up, Down, Left, Right
-    let dirs = [(0,1),(0,-1),(1,0),(-1,0),(-1,-1),(1,1),(-1,1),(1,-1)];
+    let dirs = [
+        (0, 1),
+        (0, -1),
+        (1, 0),
+        (-1, 0),
+        (-1, -1),
+        (1, 1),
+        (-1, 1),
+        (1, -1),
+    ];
     // let dirs: [(i32,i32); 4] = [(0,1),(0,-1),(1,0),(-1,0)];
 
     for dir in dirs {
-        let (new_row,new_col) = (dir.0 + at.0, dir.1 + at.1);
+        let (new_row, new_col) = (dir.0 + at.0, dir.1 + at.1);
 
         if new_col >= 0 && new_col < NUM_COLS && new_row >= 0 && new_row < NUM_ROWS {
-            let grid_cell = searchable_grid.get(new_row,new_col);
+            let grid_cell = searchable_grid.grid[new_row as usize][new_col as usize];
 
             if grid_cell != GridCellType::Wall {
-                neighbors.push((new_row,new_col));
+                neighbors.push((new_row, new_col));
             }
             continue;
         }
@@ -40,7 +48,7 @@ pub fn get_neighbors(at: (i32,i32), searchable_grid: &mut SearchableGrid) -> Vec
     neighbors
 }
 
-#[derive(Debug, Resource, Reflect, Eq, PartialEq,Hash,Clone,Copy)]
+#[derive(Debug, Resource, Reflect, Eq, PartialEq, Hash, Clone, Copy)]
 pub enum GridCellType {
     Wall,
     Empty,
@@ -49,17 +57,20 @@ pub enum GridCellType {
 }
 
 impl SearchableGrid {
-    pub fn manhatten_distance(start: (i32,i32), end: (i32,i32)) -> f32 {
+    pub fn manhatten_distance(start: (i32, i32), end: (i32, i32)) -> f32 {
         (start.0 as f32 - end.0 as f32).abs() + (start.1 as f32 - end.1 as f32).abs()
     }
 
-    pub fn euclidean_distance(start: (i32,i32), end: (i32,i32)) -> f32 {
+    pub fn euclidean_distance(start: (i32, i32), end: (i32, i32)) -> f32 {
         ((start.0 as f32 - end.0 as f32).powf(2.) + (start.1 as f32 - end.1 as f32).powf(2.)).sqrt()
     }
 
-    pub fn reconstruct_path(came_from:HashMap<(i32,i32),(i32,i32)>,current:(i32,i32)) -> Vec<(i32,i32)> {
-        let mut total_path = Vec::<(i32,i32)>::new();
-        let mut loc_current: (i32,i32) = current;
+    pub fn reconstruct_path(
+        came_from: HashMap<(i32, i32), (i32, i32)>,
+        current: (i32, i32),
+    ) -> Vec<(i32, i32)> {
+        let mut total_path = Vec::<(i32, i32)>::new();
+        let mut loc_current: (i32, i32) = current;
 
         while came_from.contains_key(&loc_current) {
             let found_current = came_from.get(&loc_current);
@@ -80,37 +91,40 @@ impl SearchableGrid {
         total_path
     }
 
-    pub fn astar_shortest_path(&mut self, start: (i32, i32), goal: (i32, i32), h: HeuristicFunc) -> Vec<(i32,i32)> {
+    pub fn astar_shortest_path(
+        &mut self,
+        start: (i32, i32),
+        goal: (i32, i32),
+        h: HeuristicFunc,
+    ) -> Vec<(i32, i32)> {
         // Initialize open set
-        let mut open_set = Vec::<(i32,i32)>::new();
+        let mut open_set = VecDeque::<(i32, i32)>::new();
 
         // Append start node to open
-        open_set.push(start);
+        open_set.push_back(start);
 
         // Initialize closed set
-        let mut closed_set = HashSet::<(i32,i32)>::new();
+        let mut closed_set = HashSet::<(i32, i32)>::new();
 
         // came_from[n] is the cheapest cost of the path starting at start to node n
-        let mut came_from = HashMap::<(i32,i32),(i32,i32)>::new();
-        
-        let mut g_score = HashMap::<(i32,i32),f32>::new();
+        let mut came_from = HashMap::<(i32, i32), (i32, i32)>::new();
+
+        let mut g_score = HashMap::<(i32, i32), f32>::new();
         g_score.insert(start, 0.);
 
-        let mut f_score = HashMap::<(i32,i32),f32>::new();
-        f_score.insert(start, h(start,goal));
+        let mut f_score = HashMap::<(i32, i32), f32>::new();
+        f_score.insert(start, h(start, goal));
 
         while !open_set.is_empty() {
-            let current = *open_set.get(0).unwrap();
+            let current = open_set.pop_front().unwrap();
 
             if current == goal {
-                return SearchableGrid::reconstruct_path(came_from, current)
+                return SearchableGrid::reconstruct_path(came_from, current);
             }
 
-            open_set.remove(0);
             closed_set.insert(current);
 
             for neighbor in get_neighbors(current, self) {
-                
                 if closed_set.contains(&neighbor) {
                     continue;
                 }
@@ -118,19 +132,16 @@ impl SearchableGrid {
                 let tentative_g_score = g_score.get(&current).cloned().unwrap_or(f32::INFINITY);
 
                 if tentative_g_score < g_score.get(&neighbor).cloned().unwrap_or(f32::INFINITY) {
-                    came_from.insert(neighbor,current);
+                    came_from.insert(neighbor, current);
                     g_score.insert(neighbor, tentative_g_score);
-                    f_score.insert(neighbor, tentative_g_score + h(neighbor,goal));
+                    f_score.insert(neighbor, tentative_g_score + h(neighbor, goal));
 
-                    if !open_set.contains(&neighbor) {
-                        open_set.push(neighbor);
-                    }
+                    open_set.push_back(neighbor);
                 }
             }
         }
 
-        Vec::<(i32,i32)>::new()
-
+        Vec::<(i32, i32)>::new()
     }
 
     fn new_grid_vec() -> Vec<Vec<GridCellType>> {
@@ -156,7 +167,11 @@ impl SearchableGrid {
     }
 
     pub fn new(rows: i32, cols: i32) -> SearchableGrid {
-        SearchableGrid { grid: SearchableGrid::new_grid_vec(), rows, cols }
+        SearchableGrid {
+            grid: SearchableGrid::new_grid_vec(),
+            rows,
+            cols,
+        }
     }
 
     pub fn get(&mut self, row: i32, col: i32) -> GridCellType {
@@ -181,7 +196,12 @@ impl SearchableGrid {
 //               (screen_height/2)
 //                       v
 //                       -
-pub fn get_render_position(screen_width: f32, screen_height: f32, row: i32, col: i32) -> (f32, f32) {
+pub fn get_render_position(
+    screen_width: f32,
+    screen_height: f32,
+    row: i32,
+    col: i32,
+) -> (f32, f32) {
     let width_per_row = screen_width / NUM_ROWS as f32;
     let height_per_column = screen_height / NUM_COLS as f32;
 
