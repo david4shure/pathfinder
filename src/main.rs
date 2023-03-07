@@ -19,27 +19,36 @@ struct EndPosition {
 }
 
 fn main() {
+    // Start bottom left
     let start_point = StartPosition{
         row:0,
         col:0,
     };
 
+    // End bottom right
     let end_point = EndPosition {
         row:grid::NUM_ROWS-1,
         col:grid::NUM_COLS-1,
     };
 
-    let grid = grid::SearchableGrid::new(grid::NUM_ROWS, grid::NUM_COLS, (start_point.row,start_point.col), (end_point.row,end_point.col));
+    let grid = grid::SearchableGrid::new(
+        grid::NUM_ROWS,
+        grid::NUM_COLS, 
+        (start_point.row,start_point.col), 
+        (end_point.row,end_point.col)
+    );
 
     App::new()
         .add_plugins(DefaultPlugins.set(WindowPlugin {
-            window: WindowDescriptor {
-                title: "Pathfinder".to_string(),
-                width: WINDOW_WIDTH as f32,
-                height: WINDOW_HEIGHT as f32,
-                resizable: false,
+            primary_window: Some(Window {
+                title: "A* Pathfinder".into(),
+                resolution: (WINDOW_WIDTH as f32, WINDOW_HEIGHT as f32).into(),
+                // Tells wasm to resize the window according to the available canvas
+                fit_canvas_to_parent: false,
+                // Tells wasm not to override default event handling, like F5, Ctrl+R etc.
+                prevent_default_event_handling: false,
                 ..default()
-            },
+            }),
             ..default()
         }))
         .insert_resource(grid)
@@ -53,15 +62,21 @@ fn main() {
         .run();
 }
 
-fn get_row_col_from_window(windows: Res<Windows>) -> (i32,i32) {
+fn setup(mut commands: Commands) {
+    commands.spawn(Camera2dBundle::default());
+}
+
+fn get_row_col_from_window(windows: Query<&mut Window>) -> (i32,i32) {
     // Games typically only have one window (the primary window).
     // For multi-window applications, you need to use a specific window ID here.
-    let _window = windows.get_primary().unwrap();
+    let Ok(primary) = windows.get_single() else {
+        panic!("Couldn't find a window, cannot proceed to pathfind.");
+    };
 
     let mut position_x = -1.0;
     let mut position_y = -1.0;
 
-    if let Some(_position) = _window.cursor_position() {
+    if let Some(_position) = primary.cursor_position() {
         // cursor is inside the window, position given
         position_x = _position.x;
         position_y = _position.y;
@@ -78,9 +93,6 @@ fn get_row_col_from_window(windows: Res<Windows>) -> (i32,i32) {
     return (row,col)
 }
 
-fn setup(mut commands: Commands) {
-    commands.spawn(Camera2dBundle::default());
-}
 
 fn compute_path_and_redraw(
     mut grid: ResMut<grid::SearchableGrid>,
@@ -177,7 +189,7 @@ fn reset_grid_to_default(
 
 fn mouse_button_input(
     mouse_buttons: Res<Input<MouseButton>>,
-    windows: Res<Windows>,
+    windows: Query<&mut Window>,
     mut grid: ResMut<grid::SearchableGrid>,
 ) {
     let (row,col) = get_row_col_from_window(windows);
@@ -205,7 +217,7 @@ fn mouse_button_input(
 
 fn update_start_or_end_point(    
     keyboard_buttons: Res<Input<KeyCode>>,
-    windows: Res<Windows>,
+    windows: Query<&mut Window>,
     mut end_point: ResMut<EndPosition>,
     mut start_point: ResMut<StartPosition>,
     mut grid: ResMut<grid::SearchableGrid>,

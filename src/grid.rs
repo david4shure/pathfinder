@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 use std::collections::{HashMap, HashSet, VecDeque};
 
-pub const NUM_ROWS: i32 = 30;
-pub const NUM_COLS: i32 = 30;
+pub const NUM_ROWS: i32 = 40;
+pub const NUM_COLS: i32 = 40;
 
 type HeuristicFunc = fn((i32, i32), (i32, i32)) -> f32;
 
@@ -32,6 +32,8 @@ pub fn get_neighbors(at: (i32, i32), searchable_grid: &mut SearchableGrid) -> Ve
         (-1, 1),
         (1, -1),
     ];
+
+    // Use this line if you only want to move in the 4 cardinal directions
     // let dirs: [(i32,i32); 4] = [(0,1),(0,-1),(1,0),(-1,0)];
 
     for dir in dirs {
