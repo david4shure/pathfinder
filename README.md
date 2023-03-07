@@ -2,7 +2,7 @@
 An A* pathfinder graphical simulation built in rust and bevy!
 
 # Example
-<img src="https://github.com/david4shure/pathfinder/blob/main/pathfinder_example.gif" width="50%" height="50%"/>
+<img src="https://github.com/david4shure/pathfinder/blob/main/pathfinder_example.gif" width="75%" height="75%"/>
 
 # Installation 
 1. [Install rust](https://www.rust-lang.org/tools/install)
