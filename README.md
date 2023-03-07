@@ -1,6 +1,9 @@
 # Pathfinder
 An A* pathfinder graphical simulation built in rust and bevy!
 
+# Example
+![](https://github.com/david4shure/pathfinder/blob/main/pathfinder_example.gif)
+
 # Installation 
 1. [Install rust](https://www.rust-lang.org/tools/install)
 2. Follow these steps
@@ -20,8 +23,5 @@ Keyboard <Space>: Reset grid to default (start in bottom left, end in top right)
 Keyboard <E>: Place end (goal) tile
 Keyboard <S>: Place start tile
 ```
-
-# Examples
-
 
 Contributions are welcome!
