@@ -21,4 +21,7 @@ Keyboard <E>: Place end (goal) tile
 Keyboard <S>: Place start tile
 ```
 
+# Examples
+
+
 Contributions are welcome!
