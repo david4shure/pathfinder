@@ -21,8 +21,8 @@ pub fn get_neighbors(at: (i32,i32), searchable_grid: &mut SearchableGrid) -> Vec
     let mut neighbors = Vec::<(i32,i32)>::new();
 
     // Up, Down, Left, Right
-    // let dirs = [(0,1),(0,-1),(1,0),(-1,0),(-1,-1),(1,1),(-1,1),(1,-1)];
-    let dirs: [(i32,i32); 4] = [(0,1),(0,-1),(1,0),(-1,0)];
+    let dirs = [(0,1),(0,-1),(1,0),(-1,0),(-1,-1),(1,1),(-1,1),(1,-1)];
+    // let dirs: [(i32,i32); 4] = [(0,1),(0,-1),(1,0),(-1,0)];
 
     for dir in dirs {
         let (new_row,new_col) = (dir.0 + at.0, dir.1 + at.1);

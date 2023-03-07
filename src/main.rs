@@ -15,6 +15,7 @@ fn main() {
                 title: "Pathfinder".to_string(),
                 width: WINDOW_WIDTH as f32,
                 height: WINDOW_HEIGHT as f32,
+                resizable: false,
                 ..default()
             },
             ..default()
